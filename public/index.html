@@ -1,0 +1,73 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>TES3MP Launcher</title>
+
+    <!--<link rel="stylesheet" type="text/css" href="Bootstrap-3.3.6/css/bootstrap.css"/>-->
+    <link rel="stylesheet" type="text/css" href="css/darkly.css"/>
+    <script>
+        window.$ = window.jQuery = require('./jQuery-2.2.3/jquery-2.2.3.js');
+    </script>
+    <script type="text/javascript" src="jQuery-2.2.3/jquery-2.2.3.js"></script>
+    <script type="text/javascript" src="Bootstrap-3.3.6/js/bootstrap.js"></script>
+</head>
+<body>
+
+<div class="container">
+    <table id="Servers" class="table">
+        <thead>
+        <tr>
+            <th>Server</th>
+            <th width="200">MOTD</th>
+            <th>Players</th>
+            <th>Max Players</th>
+            <th>Ping</th>
+            <th></th>
+        </tr>
+        </thead>
+        <tbody>
+        </tbody>
+    </table>
+</div>
+
+<script>
+    addServer = function (addr, motd, players, maxPlayers, ping) {
+
+        var btn = $('<input type="button" class="btn btn-primary btn-xs" value="Connect" id="'+ addr +'"/>');
+        btn.on('click', function () {
+            var exec = require('child_process').exec;
+            exec("tes3mp", "--connect=" + this.id);
+            window.close();
+        });
+        var row = $("<tr></tr>")
+                .append("<td>"+ addr +"</td>")
+                .append("<td>"+ motd +"</td>")
+                .append("<td>"+ players +"</td>")
+                .append("<td>"+ maxPlayers +"</td>")
+                .append("<td>"+ ping +"</td>")
+                .append($("<td></td>").append(btn));
+
+        $("#Servers").find("> tbody:last-child").append(row);
+    };
+
+    (function () {
+        var test = require("../settings_loader");
+        var url = "http://" + test.settings.getMasterAddr() +"/api/servers";
+        $.getJSON( url, function( data ) {
+            var servers = [];
+            var i = "list servers";
+            var k = 0;
+            for(k in data[i]) {
+                var Ping = require("../ping_wrapper");
+                var addr = k.substr(0, k.search(':'));
+                Ping.avg(addr, 1, function (avg) {
+                    addServer(k, data[i][k]["motd"], data[i][k]["players"], data[i][k]["max_players"], Math.ceil(avg));
+                })
+            }
+
+        });
+
+    })();
+</script>
+</body>
+</html>
